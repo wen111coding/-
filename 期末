@@ -1,0 +1,340 @@
+import 'package:flutter/material.dart';
+import 'dart:convert'; // 為了使用 LineSplitter()，直接將題庫一行一行拆成字串陣列
+
+const String questionBank =
+'''1. (2) When Jeffery doesn’t feel like cooking, he often orders pizza online and has it ______ to his house. ①advanced ②delivered  ③offered  ④stretched
+2. (1) Jane is the best ______ I have ever had. I cannot imagine running my office without her help. ①assistant ②influence  ③contribution  ④politician
+3. (3) The temple celebrated Mazu Festival by hosting ten days of lion dances, Taiwanese operas, and traditional hand ______ shows. ①chat ②quiz  ③puppet  ④variety
+4. (1) The new vaccine was banned by the Food and Drug Administration due to its       fatal side effects. ① potentially ②delicately  ③ambiguously  ④optionally
+5. (1) ______ the photos with dates and keywords help you sort them easily in your file. ① Tagging ②Flocking  ③Rolling  ④Snapping
+6. (3) An ______ person is usually pleasant and easy to get along with, but don’t expect that he or she will always say “yes” to everything. ①enormous  ②intimate  ③agreeable  ④ultimate
+7. (2) Hidden deep in a small alley among various tiny shops, the entrance of the Michelin star restaurant is barely ______ to passersby. ①identical ②visible  ③available  ④remarkable
+8. (4) The original budget for my round-island trip was NT5000, but the ______ cost is likely to be 50 percent higher. ①moderate ②absolute  ③promising  ④eventual
+9. (4) After watching a TV program on natural history, Adam decided to go on a ______ for dinosaur fossils in South Dakota. ① trial ②route   ③strike  ④quest
+10. (2) With pink cherry blossoms blooming everywhere, the valley ______ like a young bride under the bright spring sunshine. ①initiated	②represented	 ③acknowledged	 ④manipulated
+11. (1) A book town is a rural town in which second-hand and antiquarian bookshops are concentrated. The concept was  ___  by Richard Booth, who opened the first second-hand bookshop in Hay-on-Wye, UK in 1961.  ① initiated ②represented	 ③acknowledged	 ④manipulated
+12. (4) Following him, many local people opened their own bookshops, and the small town soon became a model of sustainable rural development and tourism. Since the 1970s, book towns like Hay-on-Wye   12   up all over the world.  ①spring ②sprang	 ③had sprung	 ④have been springing
+13. (3) Although all book towns have a great number of bookshops, that’s where the similarities   13  . Each of these towns shows unique features of its own. 	 ①form	②count	 ③end 	 ④matter
+14. (2) Some have many small private shops, while others have organizations steered by volunteers. Some even run regular activities to attract visitors. For example, an annual book festival is held in Hay-on-Wye. Clunes, in Australia, holds a monthly book talk that hosts authors to discuss their latest  __ .  ①trends	②releases	 ③agendas	 ④announcements
+15. (4) As digital reading is changing our traditional way of reading, book towns like Hay-on-Wye are particularly important to   15  . The feel of a book, the smell, the weight, and the knowledge that a particular book might be more than a hundred years old—all these highlight the importance of preserving the physical book as a complement to technology. 	 ①get their worldwide fame	②conform to the new mode  ③make their visitors satisfied	 ④keep the printed word alive
+16. (4) Airline passengers may have noticed that all plane windows have rounded edges, instead of the hard corners commonly found in our house. The round windows are indeed pleasant to the eye, but they actually were designed for reasons   16   aesthetics.  ①contrary to ②except for  ③more of  ④other than
+17. (1) In the early days of aviation, plane windows __  square in shape. Then as commercial air travel became popular in the 1950s and airplanes began flying higher and faster, three planes mysteriously broke apart in midair. The cause? Square windows.  ①used to be	②were to be	 ③would have been  ④must have been
+18. (4) The cause? Square windows. Scientists found that sharp corners are natural weak spots where stress concentrates. The problem is   18   when airplanes fly at higher altitudes, where the difference between the inside and outside pressure increases, causing added stress.  ① disguised ②understood  ③confronted  ④intensified
+19. (3) When subjected to repeated pressurization high in the sky, the four corners on a square window may   __ .  ① cause conflict	②rebuild strength	 ③spell disaster  ④endure shock
+20. (1) Curved windows, on the other hand, distribute stress around more evenly, reducing the likelihood of cracks or breaks. Circular shapes are also stronger and resist deformation, and therefore can__extreme differences in pressure inside and outside of an aircraft. Thus, round windows are a major safety innovation that keeps planes from disintegrating mid-flight. They are also used on ships and spacecraft for their greater structural integrity. 	①tolerate ②improve  ③justify  ④obtain
+''';
+
+
+class Question {
+	/// 題目內容
+	late final String _content;
+	
+	/// 題目選項
+	late final List<String> _options;
+	
+	/// 題目答案
+	late final int _answer;
+	
+	// ignore: unused_element
+	Question._(); // 避免使用者呼叫預設建構式
+	
+	Question.empty() // 建構空題目
+	{
+	_content = '測驗結束，請回上頁結束測驗。'; // 題目
+	_options = ['', '', '', '']; // 選項
+	_answer = 0; // 答案
+	}
+	
+	Question.set(String question) // 以輸入字串建構題目
+	{
+	String removeEndWithPeriod(String s) {
+	return s.endsWith("。") ? s.substring(0, s.length-1) : s;
+	}
+	
+	int idxAns = question.indexOf("(") + 1;
+	int idxContentStart = question.indexOf(")") + 1;
+	int idxOptionOne = question.indexOf("①");
+	int idxOptionTwo = question.indexOf("②");
+	int idxOptionThree = question.indexOf("③");
+	int idxOptionFour = question.indexOf("④");
+	
+	_content = question.substring(idxContentStart, idxOptionOne).trim(); // 題目
+	int originalAnswer =
+	int.parse(question.substring(idxAns, idxAns + 1)); // 原答案
+	
+	// 將選項洗牌
+	List<String> s = [];
+	s.add(removeEndWithPeriod(question.substring(idxOptionOne + 1, idxOptionTwo).trim())); // 原選項 1
+	s.add(removeEndWithPeriod(question.substring(idxOptionTwo + 1, idxOptionThree).trim())); // 原選項 2
+	s.add(removeEndWithPeriod(
+	question.substring(idxOptionThree + 1, idxOptionFour).trim())); // 原選項 3
+	s.add(removeEndWithPeriod(question.substring(idxOptionFour + 1).trim())); // 原選項 4
+	List<int> t = [0, 1, 2, 3];
+	t.shuffle();
+	
+	_options = [];
+	for (int i = 0; i < 4; i++) {
+	_options.add(s[t[i]]); // 加入亂序後的選項
+	if (originalAnswer == t[i] + 1) {
+	_answer = i;
+	}
+	}
+	}
+	
+	@override
+	String toString() =>
+	"(${_answer + 1}) $_content ①${_options[0]} ②${_options[1]} ③${_options[2]} ④${_options[3]}";
+	
+	/// 取得題目內容
+	String getContent() {
+	return _content;
+	}
+	
+	/// 取得題目選項
+	List<String> getOptions() {
+	return _options;
+	}
+	
+	/// 取得題目答案
+	int getAnswer() {
+	return _answer;
+	}
+	}
+	
+	class ExamSimulator {
+	//---------------------------------
+	// 成員變數
+	
+	/// 空題目，無題目需顯示時用
+	final Question emptyQuestion = Question.empty();
+	/// 題目清單
+	List<Question> questions = [];
+	/// 目前要顯示的題目索引
+	int currentIndex = 0;
+	
+	//--------------------------------
+	// 成員方法
+	
+	/// 取得目前要顯示的題目索引
+	int getCurrentIndex() {
+	return currentIndex;
+	}
+	
+	/// 取得題目清單長度
+	int getNumberOfQuestions() {
+	return questions.length;
+	}
+	
+	/// 取得目前要顯示的題目。若目前索引已大於題目清單長度，則顯示空題目。否則顯示目前題目。
+	Question getCurrentQuestion() {
+	return currentIndex >= questions.length
+	? emptyQuestion
+	: questions[currentIndex];
+	}
+	
+	/// 設定顯示下一題
+	bool nextQuestion() {
+	if (currentIndex < questions.length) {
+	currentIndex++;
+	return true;
+	} else {
+	return false;
+	}
+	}
+	
+	/// 準備考題
+	void prepareExam() {
+	// 將題庫依行拆成單一題
+	List<String> lineQuestions = const LineSplitter().convert(questionBank);
+	// 將題目清空
+	questions.clear();
+	// 將題目清單的所有題目，逐一加入題目陣列中
+	for (int i = 0; i < lineQuestions.length; i++) {
+	questions.add(Question.set(lineQuestions[i])); // 解析題目內容，取得題目、選項、答案
+	}
+	// 將題目洗牌
+	questions.shuffle();
+	// 歸零目前要顯示的題目索引
+	currentIndex = 0;
+	}
+	}
+	
+	void main() {
+	// MaterialApp 的屬性 debugShowCheckedModeBanner 設為 false，在畫面右上角就不會顯示一個 debug 圖案
+	runApp(const MaterialApp(home:SafeArea(child: WelcomePage()), debugShowCheckedModeBanner: false));
+	}
+	
+	// 入口頁面
+	class WelcomePage extends StatelessWidget {
+	const WelcomePage({Key? key}) : super(key: key);
+	@override
+	Widget build(BuildContext context) {
+	return Scaffold(body: Center(child: Column(children: [
+ 
+	const SizedBox(height: 50,),
+	const Text("歡迎檢測111英文學測\n準備好進行測驗請點擊下方按鈕\n開始測驗後，答題完點擊畫面進行下一題。",
+  softWrap: true,
+	style: TextStyle(fontSize: 20),
+         
+	),
+ 
+  
+  
+	const Divider(
+	height: 20,
+	thickness: 5,
+	indent: 20,
+	endIndent: 20,
+	color: Colors.purple),
+  
+	const SizedBox(height: 10,),
+	ElevatedButton(
+	onPressed: () { Navigator.push(
+	context,
+	MaterialPageRoute( builder: (context) { return const QuestionPage(); } )
+	);},
+ 
+	child: const Text("開始測驗", style: TextStyle(fontSize: 30,))
+  )])));
+	}
+	}
+	
+	// 測驗頁面
+	class QuestionPage extends StatefulWidget {
+	const QuestionPage({Key? key}) : super(key: key);
+	@override
+	State<QuestionPage> createState() => _QuestionPageState();
+	}
+	
+	// 測驗頁面的狀態內容
+	class _QuestionPageState extends State<QuestionPage> {
+	late ExamSimulator examSimulator; // 測驗模擬器
+	late Question currentQuestion; // 目前的問題
+	int correctAnswerCount = 0; // 回答正確題數
+	int totalQuestionCount = 0; // 總題數
+	int answeredCount = 0; // 已完成題數
+	int selectedAnswerIndex = -1; // 選擇的答案
+	bool isExamEnd = false; // 是否測驗結束
+	bool isAnswered = false; // 是否已回答完問題
+	// 選項按鈕的預設背景色
+	static const List<Color> optionDefaultColors = <Color>[
+	Colors.white,
+	Colors.white,
+	Colors.white,
+	Colors.white
+	];
+	late List<Color> optionCurrentColors;
+	
+	@override
+	initState() {
+	// 建立測驗模擬器
+	examSimulator = ExamSimulator();
+	examSimulator.prepareExam();
+	currentQuestion = examSimulator.getCurrentQuestion();
+	// 初始化答題狀態
+	correctAnswerCount = 0; // 回答正確題數
+	totalQuestionCount = examSimulator.getNumberOfQuestions(); // 總題數
+	answeredCount = 0; // 已完成題數
+	selectedAnswerIndex = -1; // 選擇的答案
+	isExamEnd = false; // 是否測驗結束
+	isAnswered = false; // 是否已回答完問題
+	optionCurrentColors = optionDefaultColors.toList(); // 預設選項的背景色
+	super.initState();
+	}
+	
+	// 按下選項按鈕的反應
+	void handleOptionButtonOnPress(int selectedOptionIndex) {
+	// 還沒回答問題，選項按鈕才有反應。回答完就不反應。考完試也不反應。
+	if (isExamEnd == false && isAnswered == false) {
+	setState(() {
+	selectedAnswerIndex = selectedOptionIndex;
+	isAnswered = true;
+	answeredCount++;
+	// 依選擇的答案，設定按鈕背景色，以及答對題數
+	optionCurrentColors[currentQuestion.getAnswer()] = Colors.purpleAccent;
+	if (selectedOptionIndex == currentQuestion.getAnswer()) {
+	correctAnswerCount++;
+	} else {
+	optionCurrentColors[selectedOptionIndex] = Colors.redAccent;
+	}
+	});
+	}
+	}
+	
+	// 按下螢幕畫面的反應
+	void handleScreenOnTap() {
+	// 若考試尚未結束，在答題完後，點一下畫面，換下一題。
+	if (isExamEnd == false && isAnswered == true) {
+	setState(() {
+	isAnswered = false;
+	examSimulator.nextQuestion();
+	isExamEnd = answeredCount >= totalQuestionCount ? true : false;
+	currentQuestion = examSimulator.getCurrentQuestion();
+	optionCurrentColors = optionDefaultColors.toList(); // 預設選項的背景色
+	});
+	}
+	}
+	
+	// 用函式建立題目
+	Widget buildQuestion() {
+	return Padding(
+	padding: const EdgeInsets.all(15.0),
+	child: Text(currentQuestion.getContent(), style: const TextStyle(fontSize: 16))
+	);
+	}
+	
+	// 用函式建立選項
+	Widget buildOptions() {
+	// 取得選項內容
+	List<String> options = currentQuestion.getOptions();
+	// 用函式建立單一選項按鈕
+	Widget buildOption(String optionContent, int optionIndex) {
+	// 判斷選項內容是否加上題號
+	optionContent = optionContent.isNotEmpty ? '${optionIndex + 1}. $optionContent' : optionContent;
+	
+	return Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: OutlinedButton(
+	onPressed: () => handleOptionButtonOnPress(optionIndex), // 按下選項按鈕的反應
+	style: OutlinedButton.styleFrom( // 選項按鈕的設計
+	shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)), // 邊界形狀
+	side: const BorderSide(color: Colors.lime), // 邊界顏色
+	foregroundColor: Colors.indigo,
+	// 以答對、答錯、是否已答題，來決定選項按鈕的背景顏色
+	backgroundColor: optionCurrentColors[optionIndex]),
+	child: Align(alignment: Alignment.centerLeft, child: Padding(
+	padding: const EdgeInsets.all(15.0),
+	child: Text(optionContent, style: const TextStyle(fontSize: 16))))));
+	}
+	
+	return Column(children: [
+	buildOption(options[0], 0),
+	const SizedBox(height: 15),
+	buildOption(options[1], 1),
+	const SizedBox(height: 15),
+	buildOption(options[2], 2),
+	const SizedBox(height: 15),
+	buildOption(options[3], 3),
+	],);
+	}
+	
+	@override
+	Widget build(BuildContext context) {
+	return Scaffold(
+	appBar: AppBar(
+	leading: IconButton(
+	icon: const Icon(Icons.arrow_back, color: Colors.white),
+	onPressed: () => Navigator.of(context).pop(),
+	),
+	title: Text("總題數 : 答題數 : 正確數 = $totalQuestionCount : $answeredCount : $correctAnswerCount"),
+	centerTitle: true),
+	body: InkWell( // InkWell 與 GestureDetector 相比，多了點擊產生漣漪特效
+	onTap: handleScreenOnTap,
+	child: Column(children: [
+	buildQuestion(),// 用函式建立題目
+	const Divider(),
+	buildOptions(),// 用函式建立選項
+	],)
+	)
+	);
+	}
+	}
+
